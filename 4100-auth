@@ -1,0 +1,35 @@
+import requests
+from urllib3.exceptions import InsecureRequestWarning
+from bs4 import BeautifulSoup
+
+# Suppress only the single InsecureRequestWarning from urllib3
+requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+
+url = 'https://address.com:4100/wgcgi.cgi'
+
+payload = {
+    'fw_username': 'username',
+    'fw_password': 'password',
+    'fw_domain': 'Firebox-DB',
+    'submit': 'Login',
+    'action': 'fw_logon',
+    'fw_logon_type': 'logon',
+    'redirect': 'https://address:4100/success.shtml'
+}
+
+response = requests.post(url, data=payload, verify=False)
+
+if response.status_code == 200:
+    content = response.text
+    soup = BeautifulSoup(content, 'html.parser')
+    
+    # Check for success indication
+    if "You have been successfully authenticated." in content:
+        print("Login successful!")
+    elif soup.find('span', {'id': 'errMsg'}):
+        error_message = soup.find('span', {'id': 'errMsg'}).text
+        print(f"Login failed: {error_message}")
+    else:
+        print("Login failed: Unknown error")
+else:
+    print(f"HTTP error: {response.status_code}")
